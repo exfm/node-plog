@@ -1,5 +1,4 @@
 "use strict";
-
 // @todo (lucas) Fix file transport to just be a one liner.
 // @todo (lucas) Log name block shouldnt include colors if in file mode.
 // @todo (lucas) Tweak console format to be better.
@@ -43,8 +42,8 @@ module.exports = function(name){
     return log;
 };
 
-module.exports.defaultLevel = defaultLevel;
-module.exports.loggers = {};
+module.exports.defaultLevel = process.logLevel || defaultLevel;
+module.exports.loggers = process.loggers || {};
 
 // var plog = require('plog'),
 // log = plog('song');
