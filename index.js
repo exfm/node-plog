@@ -64,7 +64,15 @@ function List(loggers){
 
 List.prototype.remove = function(transport){
     this.loggers.forEach(function(logger){
-        logger.remove(transport);
+        var instance = logger.transports[transport];
+          delete logger.transports[transport];
+          logger._names = Object.keys(logger.transports);
+
+          if (instance.close) {
+            instance.close();
+          }
+
+          instance.removeListener('error', instance._onError);
     });
     return this;
 };
