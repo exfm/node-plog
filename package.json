@@ -1,0 +1,23 @@
+{
+  "author": "Lucas Hrabovsky <lucas@ex.fm>",
+  "name": "node-plog",
+  "description": "Some helpers around winston for managing logs across an entire app / set of libraries easy like in python.",
+  "version": "0.0.0",
+  "homepage": "http://github.com/exfm/node-plog",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/exfm/node-plog.git"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "1.4.1",
+    "chai": "1.2.0"
+  },
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
