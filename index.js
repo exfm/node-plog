@@ -1,5 +1,8 @@
 "use strict";
 
+// @todo (lucas) Fix file transport to just be a one liner.
+// @todo (lucas) Log name block shouldnt include colors if in file mode.
+// @todo (lucas) Tweak console format to be better.
 var winston = require('winston'),
     old = winston.Logger.prototype.log,
     defaultLevel = 'crit';
@@ -19,6 +22,7 @@ module.exports = function(name){
 
     var log = winston.loggers.add(name,
         {'console': {'level': module.exports.defaultLevel, 'colorize': 'true'}});
+
     log.name = name;
 
     log.level = function(l){
@@ -28,6 +32,13 @@ module.exports = function(name){
         return this;
     };
 
+    log.file = function(path){
+        this.add(winston.transports.File, {
+            'filename': path,
+            'level': module.exports.defaultLevel
+        });
+        return this;
+    };
     module.exports.loggers[name] = log;
     return log;
 };
@@ -53,18 +64,23 @@ function List(loggers){
 
 List.prototype.remove = function(transport){
     this.loggers.forEach(function(logger){
-        delete logger.transports[transport];
+        logger.remove(transport);
     });
     return this;
 };
 
 List.prototype.file = function(path){
-    var self = this;
-    new winston.transports.File({
-        'filename': path,
-        'level': module.exports.defaultLevel,
-        'colorize': 'true'
+    var opts = {
+            'filename': path,
+            'level': module.exports.defaultLevel,
+            'colorize': 'true'
+        };
+
+    this.loggers.forEach(function(logger){
+        logger.add(winston.transports.File, opts);
     });
+
+    return this;
 };
 
 List.prototype.level = function(l){
