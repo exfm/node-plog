@@ -11,9 +11,7 @@
   "scripts": {
     "test": "mocha"
   },
-  "dependencies": {
-    "winston": "0.6.2"
-  },
+  "dependencies": {},
   "devDependencies": {
 
   },
