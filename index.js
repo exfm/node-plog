@@ -17,6 +17,7 @@ winston.Logger.prototype.log = function(level, msg){
 
 // @todo (lucas) When creating new logger, check if it matches any expressions
 // already run and apply those settings.
+// @todo (lucas) Support group/groupEnd, time/timeEnd, etc
 module.exports = function(name){
     if(winston.loggers.loggers.hasOwnProperty(name)){
         return winston.loggers.get(name);
@@ -140,3 +141,60 @@ module.exports.level = function(l){
 // log('msg') === log.debug('msg');
 
 // DEBUG=mott:* -> plog.find(/mott\:*/).level('debug');
+
+
+// var util = require('util');
+
+
+// module.exports = function(name){
+//     var logger = new Logger(name),
+//         res = function(){
+//             return logger.log('debug');
+//         };
+
+//     ['debug', 'warn', 'error', 'info'].map(function(level){
+//         res[level] = function(){
+//             return logger.log(level);
+//         };
+//     });
+
+// };
+
+// var levels = {
+//     'debug': 0,
+//     'info': 1,
+//     'warn': 2,
+//     'error': 3
+// };
+
+// function Logger(name){
+//     this.name = name;
+//     this.transports = {
+//         'console': [new Console()]
+//     };
+//     this.level = 'crit';
+// }
+
+// Logger.prototype.log = function(level){
+//     if(level < this.level){
+//         return this;
+//     }
+
+//     var self = this;
+//     Object.keys(self.transports).map(function(t){
+//         t.map(function(handler){
+//             handler.write.apply(self, arguments);
+//         });
+//     });
+//     return this;
+// };
+
+// function Console(){}
+// Console.prototype.write = function(){
+//     process.stdout.write(util.format.apply(this, arguments) + '\n');
+// };
+
+// function File(){}
+// File.prototype.write = function(){};
+
+
