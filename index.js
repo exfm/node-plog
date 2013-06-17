@@ -4,7 +4,8 @@
 // @todo (lucas) Tweak console format to be better.
 var winston = require('winston'),
     old = winston.Logger.prototype.log,
-    defaultLevel = 'crit';
+    defaultLevel = process.env.PLOG || 'crit',
+    force = process.env.PLOG ? true : false;
 
 // Patch log func to use an actually helpful format.
 winston.Logger.prototype.log = function(level, msg){
@@ -42,7 +43,7 @@ module.exports = function(name){
     return log;
 };
 
-module.exports.defaultLevel = process.logLevel || defaultLevel;
+module.exports.defaultLevel = process.env.PLOG || defaultLevel;
 module.exports.loggers = process.loggers || {};
 
 // var plog = require('plog'),
@@ -91,6 +92,9 @@ List.prototype.file = function(path){
 };
 
 List.prototype.level = function(l){
+    if(force){
+        return self;
+    }
     var self = this;
     self.loggers.forEach(function(logger){
         Object.keys(logger.transports).forEach(function(transport){
@@ -120,6 +124,8 @@ module.exports.find = function(expr){
 // Useful for when you're debugging and you just want everything to show
 // debugging.
 module.exports.level = function(l){
-    module.exports.defaultLevel = l;
+    if(!force){
+        module.exports.defaultLevel = l;
+    }
     return module.exports;
 };
