@@ -2,49 +2,29 @@
 // @todo (lucas) Fix file transport to just be a one liner.
 // @todo (lucas) Log name block shouldnt include colors if in file mode.
 // @todo (lucas) Tweak console format to be better.
-var winston = require('winston'),
-    old = winston.Logger.prototype.log,
+var util = require('util'),
     defaultLevel = process.env.PLOG || 'crit',
     force = process.env.PLOG ? true : false;
 
-// Patch log func to use an actually helpful format.
-winston.Logger.prototype.log = function(level, msg){
-    if(this.name){
-        return old.apply(this, [level, "\x1B[90m["+this.name + ": " + new Date().toUTCString() + "]\x1B[39m " + msg]);
-    }
-    return old.apply(this, [level, msg]);
-};
 
 // @todo (lucas) When creating new logger, check if it matches any expressions
 // already run and apply those settings.
 // @todo (lucas) Support group/groupEnd, time/timeEnd, etc
 module.exports = function(name){
-    if(winston.loggers.loggers.hasOwnProperty(name)){
-        return winston.loggers.get(name);
-    }
+    var logger = new Logger(name),
+        res = function(){
+            return logger.log('debug');
+        };
 
-    var log = winston.loggers.add(name,
-        {'console': {'level': module.exports.defaultLevel, 'colorize': 'true'}});
-
-    log.name = name;
-
-    log.level = function(l){
-        Object.keys(log.transports).forEach(function(t){
-            log.transports[t].level = l;
-        });
-        return this;
-    };
-
-    log.file = function(path){
-        this.add(winston.transports.File, {
-            'filename': path,
-            'level': module.exports.defaultLevel
-        });
-        return this;
-    };
-    module.exports.loggers[name] = log;
-    return log;
+    ['debug', 'warn', 'error', 'info'].map(function(level){
+        res[level] = function(){
+            return logger.log(level);
+        };
+    });
+    res.level = logger.level;
+    return res;
 };
+
 
 module.exports.defaultLevel = process.env.PLOG || defaultLevel;
 module.exports.loggers = process.loggers || {};
@@ -71,7 +51,7 @@ List.prototype.remove = function(transport){
           delete logger.transports[transport];
           logger._names = Object.keys(logger.transports);
 
-          if (instance.close) {
+          if(instance.close) {
             instance.close();
           }
 
@@ -88,7 +68,7 @@ List.prototype.file = function(path){
         };
 
     this.loggers.forEach(function(logger){
-        logger.add(winston.transports.File, opts);
+        // logger.add(winston.transports.File, opts);
     });
 
     return this;
@@ -142,59 +122,48 @@ module.exports.level = function(l){
 
 // DEBUG=mott:* -> plog.find(/mott\:*/).level('debug');
 
+var levels = {
+    'debug': 0,
+    'info': 1,
+    'warn': 2,
+    'error': 3
+};
 
-// var util = require('util');
+function Logger(name){
+    this.name = name;
+    this.transports = {
+        'console': [new Console()]
+    };
+    this.level('crit');
+}
+
+Logger.prototype.log = function(level){
+    if(level < this.level){
+        return this;
+    }
+
+    var self = this;
+    Object.keys(self.transports).map(function(t){
+        t.map(function(handler){
+            handler.write.apply(self, arguments);
+        });
+    });
+    return this;
+};
+
+// Set level
+Logger.prototype.level = function(l){};
+
+// Log to file
+Logger.prototype.file = function(dest){};
 
 
-// module.exports = function(name){
-//     var logger = new Logger(name),
-//         res = function(){
-//             return logger.log('debug');
-//         };
+function Console(){}
+Console.prototype.write = function(){
+    process.stdout.write(util.format.apply(this, arguments) + '\n');
+};
 
-//     ['debug', 'warn', 'error', 'info'].map(function(level){
-//         res[level] = function(){
-//             return logger.log(level);
-//         };
-//     });
-
-// };
-
-// var levels = {
-//     'debug': 0,
-//     'info': 1,
-//     'warn': 2,
-//     'error': 3
-// };
-
-// function Logger(name){
-//     this.name = name;
-//     this.transports = {
-//         'console': [new Console()]
-//     };
-//     this.level = 'crit';
-// }
-
-// Logger.prototype.log = function(level){
-//     if(level < this.level){
-//         return this;
-//     }
-
-//     var self = this;
-//     Object.keys(self.transports).map(function(t){
-//         t.map(function(handler){
-//             handler.write.apply(self, arguments);
-//         });
-//     });
-//     return this;
-// };
-
-// function Console(){}
-// Console.prototype.write = function(){
-//     process.stdout.write(util.format.apply(this, arguments) + '\n');
-// };
-
-// function File(){}
-// File.prototype.write = function(){};
+function File(){}
+File.prototype.write = function(){};
 
 
