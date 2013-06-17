@@ -15,6 +15,8 @@ winston.Logger.prototype.log = function(level, msg){
     return old.apply(this, [level, msg]);
 };
 
+// @todo (lucas) When creating new logger, check if it matches any expressions
+// already run and apply those settings.
 module.exports = function(name){
     if(winston.loggers.loggers.hasOwnProperty(name)){
         return winston.loggers.get(name);
@@ -129,3 +131,12 @@ module.exports.level = function(l){
     }
     return module.exports;
 };
+
+// var debug = require('debug')('mott:deploy');
+// to
+// var debug = require('plog')('mott:deploy');
+// var log = require('plog')('mott:deploy');
+// debug('msg') === debug.debug('msg');
+// log('msg') === log.debug('msg');
+
+// DEBUG=mott:* -> plog.find(/mott\:*/).level('debug');
