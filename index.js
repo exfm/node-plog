@@ -35,8 +35,6 @@ module.exports = function(name){
     return res;
 };
 
-module.exports.timestamps = {};
-
 // var debug = require('debug')('mott:deploy');
 // to
 // var debug = require('plog')('mott:deploy');
@@ -204,9 +202,6 @@ function File(logger, dest, level){
 }
 util.inherits(File, Transport);
 
-module.exports.loggers = process.loggers || {};
-module.exports.Logger = Logger;
-
 // var plog = require('plog'),
 // log = plog('song');
 // app.configure('production', function(){
@@ -230,12 +225,12 @@ List.prototype.remove = function(transport){
     return this;
 };
 
-List.prototype.file = function(dest){
+List.prototype.file = function(dest, level){
     this.loggers.map(function(logger){
         if(!logger.transports.file){
             logger.transports.file = [];
         }
-        logger.transports.file.push(new File(dest));
+        logger.transports.file.push(new File(logger, dest, level || logger.level()));
     });
     return this;
 };
@@ -270,3 +265,8 @@ module.exports.level = function(l){
     module.exports.defaultLevel = l;
     return module.exports;
 };
+
+module.exports.searches = {}; // expr => {'removes': [], 'files': [], 'levels'}
+module.exports.loggers = process.loggers || {};
+module.exports.Logger = Logger;
+module.exports.timestamps = {};
