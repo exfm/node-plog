@@ -26,7 +26,7 @@ module.exports = function(name){
             return logger.log.apply(logger, args);
         };
     });
-
+    res.silly = res.debug;
     res.transports = logger.transports;
 
     return res;
@@ -50,9 +50,9 @@ var levels = {
 };
 
 var colors = {
-    'debug': 0, // gray
+    'debug': 4, // blue
     'info': 6, // cyan
-    'warning': 3, // yellow
+    'warn': 3, // yellow
     'error': 1, // red
     'critical': 5 // magenta
 };
@@ -155,7 +155,7 @@ Transport.prototype.format = function(level, val){
     module.exports.timestamps[name] = now;
 
     if(colors && this.name !== 'file'){
-        val = '  \u001b[9' + color + 'm [' + level.toUpperCase().charAt(0) + '] ' + name + ' ' +
+        val = '  \u001b[9' + color + 'm[' + level.toUpperCase().charAt(0) + '] ' + name + ' ' +
             '\u001b[3' + color + 'm\u001b[90m' +
             val + '\u001b[3' + color + 'm' +
             ' +' + relative(ms) + '\u001b[0m';
