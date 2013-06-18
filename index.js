@@ -54,6 +54,14 @@ var levels = {
     'critical': 4
 };
 
+var colors = {
+    'debug': 0, // gray
+    'info': 6, // cyan
+    'warning': 3, // yellow
+    'error': 1, // red
+    'critical': 5 // magenta
+};
+
 module.exports.defaultLevel = 'critical';
 
 function Logger(name){
@@ -143,7 +151,7 @@ Transport.prototype.format = function(level, val){
         now = new Date(),
         name = this.logger.name,
         ms = now - (module.exports.timestamps[name] || now),
-        color = 6;
+        color = colors[level];
 
     args.shift();
     args.shift();
@@ -151,13 +159,13 @@ Transport.prototype.format = function(level, val){
     module.exports.timestamps[name] = now;
 
     if(colors && this.name !== 'file'){
-        val = '  \u001b[9' + color + 'm' + name + ' ' +
+        val = '  \u001b[9' + color + 'm [' + level.toUpperCase().charAt(0) + '] ' + name + ' ' +
             '\u001b[3' + color + 'm\u001b[90m' +
             val + '\u001b[3' + color + 'm' +
             ' +' + relative(ms) + '\u001b[0m';
     }
     else {
-        val = [new Date().toUTCString(), name, val].join(' ');
+        val = [level.toUpperCase().charAt(0), new Date().toUTCString(), name, val].join(' ');
     }
     args.unshift(val);
     return util.format.apply(this, args);
