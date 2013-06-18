@@ -2,7 +2,7 @@
   "author": "Lucas Hrabovsky <lucas@ex.fm>",
   "name": "plog",
   "description": "Some helpers around winston for managing logs across an entire app / set of libraries easy like in python.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "http://github.com/exfm/node-plog",
   "repository": {
     "type": "git",
