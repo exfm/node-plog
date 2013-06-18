@@ -68,6 +68,7 @@ function Logger(name){
     this.transports = {
         'console': [new Console(this, module.exports.defaultLevel)]
     };
+    processSearches(this);
 }
 
 Logger.prototype.transports = {};
@@ -214,24 +215,29 @@ util.inherits(File, Transport);
 //         .level('silly');
 // });
 
-function List(loggers){
+function List(loggers, expr){
     this.loggers = loggers;
+    this.expr = expr;
+    module.exports.searches[expr] = {
+        'removes': [],
+        'files': [],
+        'levels': []
+    };
 }
 
 List.prototype.remove = function(transport){
     this.loggers.map(function(logger){
         delete logger.transports[transport];
     });
+    module.exports.searches[this.expr].removes.push(arguments);
     return this;
 };
 
 List.prototype.file = function(dest, level){
     this.loggers.map(function(logger){
-        if(!logger.transports.file){
-            logger.transports.file = [];
-        }
-        logger.transports.file.push(new File(logger, dest, level || logger.level()));
+        logger.file(dest, level);
     });
+    module.exports.searches[this.expr].files.push(arguments);
     return this;
 };
 
@@ -239,16 +245,17 @@ List.prototype.level = function(l){
     var self = this;
     self.loggers.forEach(function(logger){
         Object.keys(logger.transports).forEach(function(transport){
-            logger.transports[transport].level = l;
+            logger.transports[transport].level(l);
         });
     });
+    module.exports.searches[this.expr].levels.push(arguments);
     return self;
 };
 
 module.exports.all = function(){
     return new List(Object.keys(module.exports.loggers).map(function(name){
         return module.exports.loggers[name];
-    }));
+    }), new RegExp('.*'));
 };
 
 module.exports.find = function(expr){
@@ -256,7 +263,7 @@ module.exports.find = function(expr){
         return expr.test(name);
     }).map(function(name){
         return module.exports.loggers[name];
-    }));
+    }), expr);
 };
 
 // Set all existing and newly created to be at some level.
@@ -266,7 +273,32 @@ module.exports.level = function(l){
     return module.exports;
 };
 
+function processSearches(logger){
+    Object.keys(module.exports.searches).map(function(expr){
+        if(new RegExp(expr).test(logger.name)){
+            module.exports.searches[expr].removes.map(function(r){
+                logger.remove.apply(logger, r);
+            });
+            module.exports.searches[expr].levels.map(function(l){
+                logger.level.apply(logger, l);
+            });
+            module.exports.searches[expr].files.map(function(f){
+                logger.file.apply(logger, f);
+            });
+        }
+    });
+}
+
 module.exports.searches = {}; // expr => {'removes': [], 'files': [], 'levels'}
 module.exports.loggers = process.loggers || {};
 module.exports.Logger = Logger;
 module.exports.timestamps = {};
+
+if(process.env.DEBUG){
+    if(process.env.DEBUG === '*'){
+        module.exports.level('debug');
+    }
+    else {
+        module.exports.find(new RegExp(process.env.DBUG)).level('debug');
+    }
+}
