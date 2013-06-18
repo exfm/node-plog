@@ -3,7 +3,8 @@
 // @todo (lucas) Log name block shouldnt include colors if in file mode.
 var util = require('util'),
     fs = require('fs'),
-    stream = require('stream');
+    stream = require('stream'),
+    colors = require('tty').isatty(2) || process.env.DBEUG_COLORS;
 
 
 // @todo (lucas) When creating new logger, check if it matches any expressions
@@ -33,6 +34,8 @@ module.exports = function(name){
 
     return res;
 };
+
+module.exports.timestamps = {};
 
 // var debug = require('debug')('mott:deploy');
 // to
@@ -111,55 +114,87 @@ Logger.prototype.remove = function(transport){
     return this;
 };
 
-function Console(logger, level){
+function Transport(logger, level){
+    this.logger = logger;
     this.level(level);
 }
 
-Console.prototype.log = function(){
-    var args = Array.prototype.slice.call(arguments, 0),
-        level = args.shift();
+function relative(ms) {
+    var sec = 1000,
+        min = 60 * 1000,
+        hour = 60 * min;
 
-    if(levels[level] >= this.levelNumber){
-        process.stdout.write(util.format.apply(this, args) + '\n');
-        return true;
+    if (ms >= hour){
+        return (ms / hour).toFixed(1) + 'h';
     }
-    return false;
+    if (ms >= min){
+        return (ms / min).toFixed(1) + 'm';
+    }
+    if (ms >= sec){
+        return (ms / sec | 0) + 's';
+    }
+    return ms + 'ms';
+}
+
+Transport.prototype.format = function(level, val){
+    val = val instanceof Error ? val.stack || val.message : val;
+
+    var args = Array.prototype.slice.call(arguments, 0),
+        now = new Date(),
+        name = this.logger.name,
+        ms = now - (module.exports.timestamps[name] || now),
+        color = 6;
+
+    args.shift();
+    args.shift();
+
+    module.exports.timestamps[name] = now;
+
+    if(colors && this.name !== 'file'){
+        val = '  \u001b[9' + color + 'm' + name + ' ' +
+            '\u001b[3' + color + 'm\u001b[90m' +
+            val + '\u001b[3' + color + 'm' +
+            ' +' + relative(ms) + '\u001b[0m';
+    }
+    else {
+        val = [new Date().toUTCString(), name, val].join(' ');
+    }
+    args.unshift(val);
+    return util.format.apply(this, args);
 };
 
-Console.prototype.level = function(l){
+Transport.prototype.level = function(l){
     if(l === undefined){
         return Object.keys(levels)[this.levelNumber];
     }
     this.levelNumber = levels[l];
     return this;
 };
+
+Transport.prototype.log = function(level){
+    var args = Array.prototype.slice.call(arguments, 0);
+
+    if(levels[level] >= this.levelNumber){
+        this.ws.write(this.format.apply(this, args) + '\n');
+        return true;
+    }
+    return false;
+};
+
+function Console(logger, level){
+    Console.super_.call(this, logger, level);
+    this.ws = process.stdout;
+    this.name = 'console';
+}
+util.inherits(Console, Transport);
 
 function File(logger, dest, level){
-    this.level(level);
+    File.super_.call(this, logger, level);
     this.dest = dest;
-
-    // Open file for writing
     this.ws = fs.createWriteStream(this.dest, {'flags': 'a'});
+    this.name = 'file';
 }
-File.prototype.log = function(){
-    var args = Array.prototype.slice.call(arguments, 0),
-        level = args.shift();
-
-    if(levels[level] >= this.levelNumber){
-        this.ws.write(util.format.apply(this, args) + '\n');
-        return true;
-    }
-
-    return false;
-};
-
-File.prototype.level = function(l){
-    if(l === undefined){
-        return Object.keys(levels)[this.levelNumber];
-    }
-    this.levelNumber = levels[l];
-    return this;
-};
+util.inherits(File, Transport);
 
 module.exports.loggers = process.loggers || {};
 module.exports.Logger = Logger;
