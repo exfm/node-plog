@@ -1,14 +1,11 @@
 "use strict";
-// @todo (lucas) Fix file transport to just be a one liner.
-// @todo (lucas) Log name block shouldnt include colors if in file mode.
+
 var util = require('util'),
     fs = require('fs'),
     stream = require('stream'),
     colors = require('tty').isatty(2) || process.env.DBEUG_COLORS;
 
 
-// @todo (lucas) When creating new logger, check if it matches any expressions
-// already run and apply those settings.
 // @todo (lucas) Support group/groupEnd, time/timeEnd, etc
 module.exports = function(name){
     var logger = new Logger(name),
