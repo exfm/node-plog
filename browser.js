@@ -1,9 +1,7 @@
 "use strict";
 
 var util = require('util'),
-    fs = require('fs'),
-    stream = require('stream'),
-    colors = require('tty').isatty(2) || process.env.DBEUG_COLORS;
+    colors = false;
 
 
 // @todo (lucas) Support group/groupEnd, time/timeEnd, etc
@@ -98,14 +96,6 @@ Logger.prototype.level = function(l){
 
 // Log to file
 Logger.prototype.file = function(dest, level){
-    if(!level){
-        // If no level, use the last level set for this logger.
-        level = Object.keys(levels)[this.levelNumber];
-    }
-    if(!this.transports.file){
-        this.transports.file = [];
-    }
-    this.transports.file.push(new File(this, dest, level));
     return this;
 };
 
@@ -191,14 +181,6 @@ function Console(logger, level){
     this.name = 'console';
 }
 util.inherits(Console, Transport);
-
-function File(logger, dest, level){
-    File.super_.call(this, logger, level);
-    this.dest = dest;
-    this.ws = fs.createWriteStream(this.dest, {'flags': 'a'});
-    this.name = 'file';
-}
-util.inherits(File, Transport);
 
 // var plog = require('plog'),
 // log = plog('song');

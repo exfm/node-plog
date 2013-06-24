@@ -18,5 +18,6 @@
   "optionalDependencies": {},
   "engines": {
     "node": "*"
-  }
+  },
+  "browser": "./browser.js"
 }
