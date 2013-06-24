@@ -48,11 +48,11 @@ var levels = {
 };
 
 var colors = {
-    'debug': 4, // blue
-    'info': 6, // cyan
-    'warn': 3, // yellow
-    'error': 1, // red
-    'critical': 5 // magenta
+    'debug': 'blue', // blue
+    'info': 'cyan', // cyan
+    'warn': 'yellow', // yellow
+    'error': 'red', // red
+    'critical': 'magenta' // magenta
 };
 
 module.exports.defaultLevel = 'critical';
@@ -129,6 +129,21 @@ function relative(ms) {
     }
     return ms + 'ms';
 }
+function colorize(hex) {
+    if(window.chrome || window.console && (console.exception && console.table || console.colorized)) {
+        return function (args, append, color){
+            args.push('color:'+ (color || hex) +';');
+            append && append.length && args.push(append);
+            return '%c';
+        };
+    }
+    else {
+        return function (args, append){
+            append && append.length && args.push(append);
+            return '';
+        };
+    }
+};
 
 Transport.prototype.format = function(level, val){
     val = val instanceof Error ? val.stack || val.message : val;
@@ -137,24 +152,25 @@ Transport.prototype.format = function(level, val){
         now = new Date(),
         name = this.logger.name,
         ms = now - (module.exports.timestamps[name] || now),
-        color = colors[level];
+        color = colors[level],
+        c = colorize(color);
 
     args.shift();
     args.shift();
+
+    args = [];
 
     module.exports.timestamps[name] = now;
 
     if(colors && this.name !== 'file'){
-        val = '  \u001b[9' + color + 'm[' + level.toUpperCase().charAt(0) + '] ' + name + ' ' +
-            '\u001b[3' + color + 'm\u001b[90m' +
-            val + '\u001b[3' + color + 'm' +
-            ' +' + relative(ms) + '\u001b[0m';
+        val = c(args) + ' [' + level.toUpperCase().charAt(0) + '] ' + name + ' ' + val + c(args, Array.prototype.slice.call(arguments, 2), 'black') + ' +' + relative(ms);
     }
     else {
         val = [level.toUpperCase().charAt(0), new Date().toUTCString(), name, val].join(' ');
     }
+
     args.unshift(val);
-    return util.format.apply(this, args);
+    return args;
 };
 
 Transport.prototype.level = function(l){
@@ -169,7 +185,7 @@ Transport.prototype.log = function(level){
     var args = Array.prototype.slice.call(arguments, 0);
 
     if(levels[level] >= this.levelNumber){
-        this.ws.write(this.format.apply(this, args) + '\n');
+        this.ws.write.apply(this, this.format.apply(this, args));
         return true;
     }
     return false;
@@ -177,7 +193,9 @@ Transport.prototype.log = function(level){
 
 function Console(logger, level){
     Console.super_.call(this, logger, level);
-    this.ws = process.stdout;
+    this.ws = {'write': function(){
+        Function.prototype.apply.call(console.log, console, arguments);
+    }};
     this.name = 'console';
 }
 util.inherits(Console, Transport);
